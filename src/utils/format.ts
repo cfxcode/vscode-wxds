@@ -38,6 +38,16 @@ export function formatStar(star?: number | null): string {
   return '⭐'.repeat(count);
 }
 
+export function formatRating(rating?: number | null): string {
+  if (!rating || rating <= 0) {
+    return '';
+  }
+  if (rating > 100) {
+    return `${(rating / 10).toFixed(1)}%`;
+  }
+  return `${rating}%`;
+}
+
 export function computeShelfStats(shelf: ShelfSyncResponse): ShelfStats {
   const books = shelf.books ?? [];
   const albums = shelf.albums ?? [];

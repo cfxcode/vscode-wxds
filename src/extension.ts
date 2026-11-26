@@ -4,9 +4,10 @@ import * as vscode from 'vscode';
 import { DEFAULT_GATEWAY, WeReadApiClient } from './api/wereadApi';
 import { generateBookNotesMarkdown } from './services/markdownExporter';
 import type { NotebookItem } from './types/weread';
-import { sanitizeFilename } from './utils/format';
+import { formatRating, sanitizeFilename } from './utils/format';
 import { BookDetailPanel } from './views/bookDetailPanel';
 import { DiscoverNode, DiscoverTreeProvider } from './views/discoverTreeProvider';
+import { NoteDetailPanel } from './views/noteDetailPanel';
 import { NotesNode, NotesTreeProvider } from './views/notesTreeProvider';
 import { ShelfNode, ShelfTreeProvider } from './views/shelfTreeProvider';
 import { StatsDashboardPanel } from './views/statsDashboardPanel';
@@ -67,6 +68,16 @@ function extractBookTarget(
         readerLink: node.book.readerLink || node.book.deepLink,
       };
     }
+    if (node.kind === 'highlight' || node.kind === 'thought') {
+      return {
+        bookId: node.bookId,
+        title: node.bookTitle,
+        author: node.bookAuthor,
+        readerLink: node.readerLink,
+        notebook: node.notebook,
+      };
+    }
+    return undefined;
   }
   if ('bookId' in node && typeof node.bookId === 'string') {
     return {
@@ -212,6 +223,20 @@ export function activate(context: vscode.ExtensionContext): void {
     void bookDetailPanel.open(bookId, title);
   });
 
+  const noteDetailPanel = new NoteDetailPanel(context.extensionUri, api, {
+    onOpenBookDetail: (bookId, title) => {
+      void bookDetailPanel.open(bookId, title);
+    },
+    onExportNotes: (bookId, title, author, readerLink, notebook) => {
+      void exportSingleBookNotes(bookId, title, author, readerLink, notebook);
+    },
+    onOpenExternal: (url) => {
+      if (url) {
+        void vscode.env.openExternal(vscode.Uri.parse(url));
+      }
+    },
+  });
+
   // Register TreeViews
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('wxds.shelfView', shelfProvider),
@@ -335,6 +360,27 @@ export function activate(context: vscode.ExtensionContext): void {
       await statsDashboard.open('monthly');
     }),
 
+    vscode.commands.registerCommand('wxds.viewNoteDetail', async (arg?: unknown) => {
+      if (!arg || typeof arg !== 'object' || !('kind' in arg)) {
+        return;
+      }
+      const node = arg as NotesNode;
+      if (node.kind === 'highlight' || node.kind === 'thought') {
+        await noteDetailPanel.open({
+          kind: node.kind,
+          bookId: node.bookId,
+          bookTitle: node.bookTitle,
+          bookAuthor: node.bookAuthor,
+          readerLink: node.readerLink,
+          notebook: node.notebook,
+          chapterTitle: node.chapterTitle,
+          text: node.text,
+          abstract: node.kind === 'thought' ? node.abstract : undefined,
+          createTime: node.createTime,
+        });
+      }
+    }),
+
     vscode.commands.registerCommand('wxds.openBookDetail', async (arg?: unknown) => {
       const target = extractBookTarget(arg);
       if (!target) {
@@ -397,7 +443,7 @@ export function activate(context: vscode.ExtensionContext): void {
             if (!info?.title) {
               continue;
             }
-            const rating = item.newRating ? `${item.newRating}%` : '';
+            const rating = formatRating(item.newRating);
             const reading = item.readingCount ? `${item.readingCount}人在读` : '';
             picks.push({
               label: info.title,
@@ -511,6 +557,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     statsDashboard,
     bookDetailPanel,
+    noteDetailPanel,
   );
 }
 

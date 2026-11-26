@@ -2,7 +2,7 @@
   "name": "vscode-wxds",
   "displayName": "微信读书助手 (VS Code WeRead)",
   "description": "基于微信读书官方 Agent API Gateway 的纯净安全版 VS Code 插件：管理个人书架、查看阅读统计与偏好看板、书城多维搜索、浏览热门划线与书评、一键导出笔记划线为 Markdown。",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "cfxcode",
   "license": "MIT",
   "repository": {

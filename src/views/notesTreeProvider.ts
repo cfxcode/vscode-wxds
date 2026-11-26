@@ -7,8 +7,29 @@ export type NotesNode =
   | { kind: 'message'; label: string; description?: string; command?: vscode.Command }
   | { kind: 'summary'; label: string; description: string }
   | { kind: 'notebook'; notebook: NotebookItem }
-  | { kind: 'highlight'; chapterTitle: string; text: string; createTime?: number }
-  | { kind: 'thought'; chapterTitle: string; text: string; abstract?: string; createTime?: number };
+  | {
+      kind: 'highlight';
+      bookId: string;
+      bookTitle: string;
+      bookAuthor: string;
+      readerLink?: string;
+      notebook: NotebookItem;
+      chapterTitle: string;
+      text: string;
+      createTime?: number;
+    }
+  | {
+      kind: 'thought';
+      bookId: string;
+      bookTitle: string;
+      bookAuthor: string;
+      readerLink?: string;
+      notebook: NotebookItem;
+      chapterTitle: string;
+      text: string;
+      abstract?: string;
+      createTime?: number;
+    };
 
 export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<NotesNode | undefined>();
@@ -71,9 +92,14 @@ export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
       );
       item.description = `${element.chapterTitle} · ${formatDate(element.createTime)}`;
       item.tooltip = new vscode.MarkdownString(
-        `**[划线] ${element.chapterTitle}**（${formatDate(element.createTime)}）\n\n> ${element.text}`,
+        `**[划线] ${element.chapterTitle}**（${formatDate(element.createTime)}）\n\n> ${element.text}\n\n_点击查看完整内容与复制_`,
       );
       item.iconPath = new vscode.ThemeIcon('quote');
+      item.command = {
+        command: 'wxds.viewNoteDetail',
+        title: '查看划线详情',
+        arguments: [element],
+      };
       return item;
     }
 
@@ -85,9 +111,14 @@ export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
     item.description = `想法 · ${element.chapterTitle} · ${formatDate(element.createTime)}`;
     const quote = element.abstract ? `> ${element.abstract}\n\n` : '';
     item.tooltip = new vscode.MarkdownString(
-      `**[想法/点评] ${element.chapterTitle}**（${formatDate(element.createTime)}）\n\n${quote}${element.text}`,
+      `**[想法/点评] ${element.chapterTitle}**（${formatDate(element.createTime)}）\n\n${quote}${element.text}\n\n_点击查看完整内容与复制_`,
     );
     item.iconPath = new vscode.ThemeIcon('comment');
+    item.command = {
+      command: 'wxds.viewNoteDetail',
+      title: '查看想法详情',
+      arguments: [element],
+    };
     return item;
   }
 
@@ -129,7 +160,12 @@ export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
     }
 
     if (element.kind === 'notebook') {
-      const bookId = element.notebook.bookId;
+      const nb = element.notebook;
+      const bookId = nb.bookId;
+      const bookTitle = nb.book?.title || bookId;
+      const bookAuthor = nb.book?.author || '';
+      const readerLink = nb.book?.readerLink || nb.book?.deepLink;
+
       try {
         const [bm, reviews] = await Promise.all([
           this.api.getBookmarks(bookId),
@@ -140,10 +176,16 @@ export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
           chapterMap.set(c.chapterUid, c.title);
         }
 
+        const resolvedLink = readerLink || bm.book?.readerLink || bm.book?.deepLink;
         const children: NotesNode[] = [];
         for (const h of bm.updated ?? []) {
           children.push({
             kind: 'highlight',
+            bookId,
+            bookTitle,
+            bookAuthor,
+            readerLink: resolvedLink,
+            notebook: nb,
             chapterTitle: chapterMap.get(h.chapterUid) || `章节 ${h.chapterUid}`,
             text: h.markText,
             createTime: h.createTime,
@@ -156,6 +198,11 @@ export class NotesTreeProvider implements vscode.TreeDataProvider<NotesNode> {
           }
           children.push({
             kind: 'thought',
+            bookId,
+            bookTitle,
+            bookAuthor,
+            readerLink: resolvedLink,
+            notebook: nb,
             chapterTitle:
               (rev.chapterUid ? chapterMap.get(rev.chapterUid) : undefined) ||
               rev.chapterName ||

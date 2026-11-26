@@ -5,6 +5,7 @@ import {
   computeShelfStats,
   formatDate,
   formatDuration,
+  formatRating,
   formatStar,
   sanitizeFilename,
 } from '../src/utils/format';
@@ -30,6 +31,14 @@ test('formatStar maps 20-100 scale to 1-5 stars', () => {
   assert.equal(formatStar(60), '⭐⭐⭐');
   assert.equal(formatStar(20), '⭐');
   assert.equal(formatStar(0), '无评分');
+});
+
+test('formatRating handles both 0-100 and 0-1000 WeRead scales', () => {
+  assert.equal(formatRating(826), '82.6%');
+  assert.equal(formatRating(950), '95.0%');
+  assert.equal(formatRating(92), '92%');
+  assert.equal(formatRating(0), '');
+  assert.equal(formatRating(undefined), '');
 });
 
 test('computeShelfStats counts books + albums + mp and public/private accurately', () => {

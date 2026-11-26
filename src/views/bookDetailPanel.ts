@@ -7,7 +7,7 @@ import type {
   ChapterInfoResponse,
   PublicReviewsResponse,
 } from '../types/weread';
-import { escapeHtml, formatDate, formatDuration, formatStar } from '../utils/format';
+import { escapeHtml, formatDate, formatDuration, formatRating, formatStar } from '../utils/format';
 
 export interface BookDetailCallbacks {
   onReadExternal: (url: string | undefined) => void;
@@ -25,6 +25,7 @@ const REVIEW_TYPES: Array<{ type: number; label: string }> = [
 
 export class BookDetailPanel {
   private panel: vscode.WebviewPanel | undefined;
+  private messageDisposable: vscode.Disposable | undefined;
   private currentBookId: string | undefined;
 
   constructor(
@@ -49,6 +50,8 @@ export class BookDetailPanel {
       );
       panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'weread-icon.svg');
       panel.onDidDispose(() => {
+        this.messageDisposable?.dispose();
+        this.messageDisposable = undefined;
         this.panel = undefined;
       });
       this.panel = panel;
@@ -83,7 +86,8 @@ export class BookDetailPanel {
       const readerLink = info.readerLink || info.deepLink;
       this.panel.title = `详情 · ${bookTitle}`;
 
-      const disposable = this.panel.webview.onDidReceiveMessage(async (msg) => {
+      this.messageDisposable?.dispose();
+      this.messageDisposable = this.panel.webview.onDidReceiveMessage(async (msg) => {
         if (!msg || typeof msg !== 'object') {
           return;
         }
@@ -94,7 +98,6 @@ export class BookDetailPanel {
         } else if (msg.type === 'findSimilar') {
           this.callbacks.onFindSimilar(bookId, bookTitle);
         } else if (msg.type === 'filterReviews' && typeof msg.reviewType === 'number') {
-          disposable.dispose();
           await this.loadAll(bookId, msg.reviewType);
         }
       });
@@ -128,8 +131,9 @@ export class BookDetailPanel {
     const prog = progress?.book;
     const pct = prog?.progress ?? 0;
     const durSec = prog?.readingTime ?? prog?.recordReadingTime ?? 0;
-    const ratingText = info.newRating
-      ? `${info.newRating}%${info.newRatingDetail?.title ? `（${info.newRatingDetail.title}）` : ''} · ${info.newRatingCount ?? 0}人评分`
+    const formattedRating = formatRating(info.newRating);
+    const ratingText = formattedRating
+      ? `${formattedRating}${info.newRatingDetail?.title ? `（${info.newRatingDetail.title}）` : ''} · ${info.newRatingCount ?? 0}人评分`
       : '暂无评分';
 
     const chapters = chapterInfo?.chapters ?? [];
@@ -386,6 +390,7 @@ export class BookDetailPanel {
   }
 
   dispose(): void {
+    this.messageDisposable?.dispose();
     this.panel?.dispose();
   }
 }

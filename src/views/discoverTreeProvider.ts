@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { WeReadApiClient } from '../api/wereadApi';
 import type { RecommendBook } from '../types/weread';
+import { formatRating } from '../utils/format';
 
 export type DiscoverNode =
   | { kind: 'searchAction' }
@@ -40,7 +41,7 @@ export class DiscoverTreeProvider implements vscode.TreeDataProvider<DiscoverNod
     const b = element.book;
     const title = b.title || b.bookId;
     const item = new vscode.TreeItem(title, vscode.TreeItemCollapsibleState.None);
-    const ratingStr = b.newRating ? `${b.newRating}%` : '';
+    const ratingStr = formatRating(b.newRating);
     item.description = [b.author || '', ratingStr, b.newRatingDetail?.title || '']
       .filter(Boolean)
       .join(' · ');
