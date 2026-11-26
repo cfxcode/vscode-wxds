@@ -1,8 +1,8 @@
 {
   "name": "vscode-wxds",
   "displayName": "微信读书助手 (VS Code WeRead)",
-  "description": "在 VS Code 中阅读微信读书正文，管理个人书架、查看阅读统计与偏好分析、浏览书评与热门划线、一键导出笔记划线为 Markdown。",
-  "version": "0.1.0",
+  "description": "基于微信读书官方 Agent API Gateway 的纯净安全版 VS Code 插件：管理个人书架、查看阅读统计与偏好看板、书城多维搜索、浏览热门划线与书评、一键导出笔记划线为 Markdown。",
+  "version": "0.2.0",
   "publisher": "cfxcode",
   "license": "MIT",
   "repository": {
@@ -59,16 +59,10 @@
     },
     "commands": [
       {
-        "command": "wxds.openReader",
-        "title": "打开内嵌阅读器",
+        "command": "wxds.openQuickMenu",
+        "title": "打开快捷菜单",
         "category": "微信读书",
         "icon": "$(book)"
-      },
-      {
-        "command": "wxds.toggleReader",
-        "title": "切换显示/隐藏阅读器（老板键）",
-        "category": "微信读书",
-        "icon": "$(eye-closed)"
       },
       {
         "command": "wxds.openExternalReader",
@@ -154,23 +148,16 @@
         "icon": "$(export)"
       }
     ],
-    "keybindings": [
-      {
-        "command": "wxds.toggleReader",
-        "key": "alt+shift+w",
-        "mac": "alt+shift+w"
-      }
-    ],
     "menus": {
       "view/title": [
         {
-          "command": "wxds.openReader",
-          "when": "view == wxds.shelfView",
+          "command": "wxds.searchStore",
+          "when": "view == wxds.shelfView || view == wxds.discoverView",
           "group": "navigation@1"
         },
         {
-          "command": "wxds.searchStore",
-          "when": "view == wxds.shelfView || view == wxds.discoverView",
+          "command": "wxds.openExternalReader",
+          "when": "view == wxds.shelfView",
           "group": "navigation@2"
         },
         {
@@ -211,24 +198,19 @@
       ],
       "view/item/context": [
         {
-          "command": "wxds.openReader",
-          "when": "viewItem == wxdsBook || viewItem == wxdsRecommendBook",
+          "command": "wxds.openBookDetail",
+          "when": "viewItem == wxdsBook || viewItem == wxdsNotebook || viewItem == wxdsRecommendBook",
           "group": "inline@1"
         },
         {
-          "command": "wxds.openBookDetail",
-          "when": "viewItem == wxdsBook || viewItem == wxdsNotebook || viewItem == wxdsRecommendBook",
+          "command": "wxds.openExternalReader",
+          "when": "viewItem == wxdsBook || viewItem == wxdsRecommendBook",
           "group": "inline@2"
         },
         {
           "command": "wxds.exportBookNotes",
           "when": "viewItem == wxdsBook || viewItem == wxdsNotebook",
           "group": "inline@3"
-        },
-        {
-          "command": "wxds.openExternalReader",
-          "when": "viewItem == wxdsBook || viewItem == wxdsRecommendBook",
-          "group": "1_read@1"
         },
         {
           "command": "wxds.findSimilarBooks",
@@ -244,35 +226,6 @@
           "type": "boolean",
           "default": true,
           "description": "在底部状态栏显示微信读书快捷入口"
-        },
-        "wxds.readerTabTitle": {
-          "type": "string",
-          "default": "微信读书",
-          "description": "内嵌阅读器标签页标题（可自定义为代码文件名等实现隐蔽阅读）"
-        },
-        "wxds.showTabLogo": {
-          "type": "boolean",
-          "default": true,
-          "description": "是否在内嵌阅读器标签页上显示微信读书图标"
-        },
-        "wxds.readerOpacity": {
-          "type": "number",
-          "default": 1,
-          "minimum": 0.15,
-          "maximum": 1,
-          "description": "内嵌阅读器页面不透明度（0.15 - 1.0）"
-        },
-        "wxds.hideScrollbar": {
-          "type": "boolean",
-          "default": false,
-          "description": "是否隐藏内嵌阅读器右侧滚动条"
-        },
-        "wxds.proxyPort": {
-          "type": "number",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 65535,
-          "description": "内嵌阅读器本地反向代理端口（0 表示自动分配空闲端口）"
         },
         "wxds.exportDir": {
           "type": "string",

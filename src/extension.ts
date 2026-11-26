@@ -8,7 +8,6 @@ import { sanitizeFilename } from './utils/format';
 import { BookDetailPanel } from './views/bookDetailPanel';
 import { DiscoverNode, DiscoverTreeProvider } from './views/discoverTreeProvider';
 import { NotesNode, NotesTreeProvider } from './views/notesTreeProvider';
-import { ReaderPanelManager } from './views/readerPanel';
 import { ShelfNode, ShelfTreeProvider } from './views/shelfTreeProvider';
 import { StatsDashboardPanel } from './views/statsDashboardPanel';
 import { StatsNode, StatsTreeProvider } from './views/statsTreeProvider';
@@ -81,7 +80,9 @@ function extractBookTarget(
 }
 
 async function resolveExportDirectory(): Promise<string | undefined> {
-  const configuredDir = vscode.workspace.getConfiguration('wxds').get<string>('exportDir', 'weread-notes');
+  const configuredDir = vscode.workspace
+    .getConfiguration('wxds')
+    .get<string>('exportDir', 'weread-notes');
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (workspaceFolder) {
     const dirPath = path.isAbsolute(configuredDir)
@@ -115,7 +116,6 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
 
-  const readerManager = new ReaderPanelManager(context.extensionUri);
   const shelfProvider = new ShelfTreeProvider(api);
   const notesProvider = new NotesTreeProvider(api);
   const statsProvider = new StatsTreeProvider(api);
@@ -195,9 +195,6 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   const bookDetailPanel = new BookDetailPanel(context.extensionUri, api, {
-    onReadInline: (url, title) => {
-      void readerManager.open(url, title);
-    },
     onReadExternal: (url) => {
       if (url) {
         void vscode.env.openExternal(vscode.Uri.parse(url));
@@ -226,8 +223,8 @@ export function activate(context: vscode.ExtensionContext): void {
   // Status bar item
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.text = '$(book) 微信读书';
-  statusBarItem.tooltip = '点击打开微信读书内嵌阅读器（Alt+Shift+W 老板键）';
-  statusBarItem.command = 'wxds.openReader';
+  statusBarItem.tooltip = '打开微信读书助手快捷菜单';
+  statusBarItem.command = 'wxds.openQuickMenu';
   const syncStatusBarVisibility = () => {
     const show = vscode.workspace.getConfiguration('wxds').get<boolean>('showStatusBar', true);
     if (show) {
@@ -244,7 +241,6 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('wxds')) {
         syncStatusBarVisibility();
-        readerManager.onConfigurationChanged();
       }
     }),
   );
@@ -258,13 +254,45 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('wxds.openReader', async (arg?: unknown) => {
-      const target = extractBookTarget(arg);
-      await readerManager.open(target?.readerLink, target?.title);
-    }),
-
-    vscode.commands.registerCommand('wxds.toggleReader', async () => {
-      await readerManager.toggle();
+    vscode.commands.registerCommand('wxds.openQuickMenu', async () => {
+      const picked = await vscode.window.showQuickPick(
+        [
+          {
+            label: '$(graph) 打开阅读统计与偏好看板',
+            description: '本周 / 本月 / 本年 / 全部总计',
+            cmd: 'wxds.openStatsDashboard',
+          },
+          {
+            label: '$(search) 书城多维搜索',
+            description: '电子书 / 网文 / 听书 / 全文 / 作者 / 书单',
+            cmd: 'wxds.searchStore',
+          },
+          {
+            label: '$(export) 一键导出全部笔记划线为 Markdown',
+            description: '同步个人划线与想法到本地工作区',
+            cmd: 'wxds.exportAllNotes',
+          },
+          {
+            label: '$(link-external) 在官方浏览器打开微信读书',
+            description: '安全直达 weread.qq.com',
+            cmd: 'wxds.openExternalReader',
+          },
+          {
+            label: '$(refresh) 刷新全部微信读书数据',
+            description: '同步书架、笔记本、统计与推荐',
+            cmd: 'wxds.refreshAll',
+          },
+          {
+            label: '$(key) 配置 API Key',
+            description: '加密保存到 VS Code SecretStorage',
+            cmd: 'wxds.setApiKey',
+          },
+        ],
+        { placeHolder: '微信读书助手 — 选择操作' },
+      );
+      if (picked) {
+        await vscode.commands.executeCommand(picked.cmd);
+      }
     }),
 
     vscode.commands.registerCommand('wxds.openExternalReader', async (arg?: unknown) => {
@@ -276,7 +304,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('wxds.setApiKey', async () => {
       const value = await vscode.window.showInputBox({
         title: '配置微信读书 WEREAD_API_KEY',
-        prompt: '输入 wrk-xxxxxxxx 格式的密钥（使用 VS Code SecretStorage 加密存储，不会写入明文配置）',
+        prompt:
+          '输入 wrk-xxxxxxxx 格式的密钥（使用 VS Code SecretStorage 加密存储，不会写入明文配置）',
         password: true,
         ignoreFocusOut: true,
         placeHolder: 'wrk-xxxxxxxxxxxxxxxx',
@@ -290,7 +319,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand('wxds.clearApiKey', async () => {
       await context.secrets.delete(SECRET_API_KEY);
-      vscode.window.showInformationMessage('已清除本地保存的 API Key（若系统环境变量中仍配置了 WEREAD_API_KEY 将自动回退使用）。');
+      vscode.window.showInformationMessage(
+        '已清除本地保存的 API Key（若系统环境变量中仍配置了 WEREAD_API_KEY 将自动回退使用）。',
+      );
       refreshAll();
     }),
 
@@ -466,7 +497,9 @@ export function activate(context: vscode.ExtensionContext): void {
               await fs.writeFile(filePath, md, 'utf8');
               exported += 1;
             }
-            vscode.window.showInformationMessage(`已完成导出，共生成 ${exported} 份 Markdown 笔记（目录：${dir}）。`);
+            vscode.window.showInformationMessage(
+              `已完成导出，共生成 ${exported} 份 Markdown 笔记（目录：${dir}）。`,
+            );
           },
         );
       } catch (err) {
@@ -476,7 +509,6 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    readerManager,
     statsDashboard,
     bookDetailPanel,
   );

@@ -10,7 +10,6 @@ import type {
 import { escapeHtml, formatDate, formatDuration, formatStar } from '../utils/format';
 
 export interface BookDetailCallbacks {
-  onReadInline: (url: string | undefined, title: string) => void;
   onReadExternal: (url: string | undefined) => void;
   onExportNotes: (bookId: string, title: string, author: string, readerLink?: string) => void;
   onFindSimilar: (bookId: string, title: string) => void;
@@ -88,9 +87,7 @@ export class BookDetailPanel {
         if (!msg || typeof msg !== 'object') {
           return;
         }
-        if (msg.type === 'readInline') {
-          this.callbacks.onReadInline(readerLink, bookTitle);
-        } else if (msg.type === 'readExternal') {
+        if (msg.type === 'readExternal') {
           this.callbacks.onReadExternal(readerLink);
         } else if (msg.type === 'exportNotes') {
           this.callbacks.onExportNotes(bookId, bookTitle, author, readerLink);
@@ -335,8 +332,7 @@ export class BookDetailPanel {
       <div class="meta">个人阅读进度：<strong>${pct}%</strong>（累计 ${escapeHtml(formatDuration(durSec))}，最近阅读：${formatDate(prog?.updateTime)}）</div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="actions">
-        <button id="btnInline">在 VS Code 中阅读</button>
-        <button id="btnExternal" class="secondary">浏览器打开</button>
+        <button id="btnExternal">在微信读书网页版阅读</button>
         <button id="btnExport" class="secondary">导出笔记 Markdown</button>
         <button id="btnSimilar" class="secondary">找相似好书</button>
       </div>
@@ -368,7 +364,6 @@ export class BookDetailPanel {
 
   <script>
     const vscode = acquireVsCodeApi();
-    document.getElementById('btnInline').addEventListener('click', () => vscode.postMessage({ type: 'readInline' }));
     document.getElementById('btnExternal').addEventListener('click', () => vscode.postMessage({ type: 'readExternal' }));
     document.getElementById('btnExport').addEventListener('click', () => vscode.postMessage({ type: 'exportNotes' }));
     document.getElementById('btnSimilar').addEventListener('click', () => vscode.postMessage({ type: 'findSimilar' }));

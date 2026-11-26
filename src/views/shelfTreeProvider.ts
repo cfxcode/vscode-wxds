@@ -81,8 +81,8 @@ export class ShelfTreeProvider implements vscode.TreeDataProvider<ShelfNode> {
       item.iconPath = new vscode.ThemeIcon(b.finishReading === 1 ? 'pass-filled' : 'book');
       item.contextValue = 'wxdsBook';
       item.command = {
-        command: 'wxds.openReader',
-        title: '在 VS Code 中阅读',
+        command: 'wxds.openBookDetail',
+        title: '查看书籍详情与书评',
         arguments: [element],
       };
       return item;

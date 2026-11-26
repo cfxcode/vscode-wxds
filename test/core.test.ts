@@ -8,13 +8,8 @@ import {
   formatStar,
   sanitizeFilename,
 } from '../src/utils/format';
-import {
-  injectCustomStyle,
-  rewriteResponseHeaders,
-  rewriteSetCookie,
-  toLocalProxyUrl,
-} from '../src/proxy/wereadProxy';
 import { generateBookNotesMarkdown } from '../src/services/markdownExporter';
+import { WeReadApiClient, WeReadApiError } from '../src/api/wereadApi';
 
 test('formatDate formats Unix timestamps in UTC+8 YYYY-MM-DD', () => {
   assert.equal(formatDate(1795675736), '2026-11-26');
@@ -69,40 +64,20 @@ test('sanitizeFilename strips unsafe filesystem characters', () => {
   assert.equal(sanitizeFilename('三体: 死神永生/典藏版?'), '三体_ 死神永生_典藏版_');
 });
 
-test('proxy header & cookie rewrites strip frame blockers and fix cookies', () => {
-  const cookie = rewriteSetCookie('wr_skey=abc; Path=/; Domain=.weread.qq.com; Secure; SameSite=None');
-  assert.ok(!/Domain=/i.test(cookie));
-  assert.ok(!/Secure/i.test(cookie));
-  assert.ok(/SameSite=Lax/i.test(cookie));
-
-  const headers = rewriteResponseHeaders(
-    {
-      'x-frame-options': 'SAMEORIGIN',
-      'content-security-policy': "frame-ancestors 'self'",
-      location: 'https://weread.qq.com/web/reader/123',
-      'set-cookie': ['wr_vid=1; Domain=.weread.qq.com; Secure'],
-      'content-type': 'text/html; charset=utf-8',
+test('WeReadApiClient rejects cleanly when API key is missing', async () => {
+  const client = new WeReadApiClient({
+    async getApiKey() {
+      return undefined;
     },
-    'http://127.0.0.1:45678',
-  );
-
-  assert.equal(headers['x-frame-options'], undefined);
-  assert.equal(headers['content-security-policy'], undefined);
-  assert.equal(headers.location, 'http://127.0.0.1:45678/web/reader/123');
-  assert.deepEqual(headers['set-cookie'], ['wr_vid=1']);
-});
-
-test('proxy URL mapping and custom style injection work cleanly', () => {
-  assert.equal(
-    toLocalProxyUrl('https://weread.qq.com/web/reader/abc?foo=1', 'http://127.0.0.1:9000'),
-    'http://127.0.0.1:9000/web/reader/abc?foo=1',
-  );
-  const injected = injectCustomStyle('<html><head><title>x</title></head><body></body></html>', {
-    opacity: 0.6,
-    hideScrollbar: true,
+    getGatewayUrl() {
+      return 'https://i.weread.qq.com/api/agent/gateway';
+    },
   });
-  assert.ok(injected.includes('opacity: 0.6 !important;'));
-  assert.ok(injected.includes('::-webkit-scrollbar'));
+
+  await assert.rejects(
+    () => client.syncShelf(),
+    (err: unknown) => err instanceof WeReadApiError && err.message.includes('WEREAD_API_KEY'),
+  );
 });
 
 test('generateBookNotesMarkdown formats YAML frontmatter, chapters, highlights and thoughts', () => {

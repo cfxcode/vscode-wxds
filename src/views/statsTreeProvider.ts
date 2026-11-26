@@ -72,8 +72,8 @@ export class StatsTreeProvider implements vscode.TreeDataProvider<StatsNode> {
     item.iconPath = new vscode.ThemeIcon(pct === 100 ? 'pass-filled' : 'clock');
     item.contextValue = 'wxdsBook';
     item.command = {
-      command: 'wxds.openReader',
-      title: '继续阅读',
+      command: 'wxds.openBookDetail',
+      title: '查看书籍详情',
       arguments: [{ kind: 'book', book }],
     };
     return item;
