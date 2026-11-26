@@ -1,0 +1,304 @@
+{
+  "name": "vscode-wxds",
+  "displayName": "微信读书助手 (VS Code WeRead)",
+  "description": "在 VS Code 中阅读微信读书正文，管理个人书架、查看阅读统计与偏好分析、浏览书评与热门划线、一键导出笔记划线为 Markdown。",
+  "version": "0.1.0",
+  "publisher": "cfxcode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cfxcode/vscode-wxds.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "weread",
+    "wxread",
+    "微信读书",
+    "reading",
+    "markdown",
+    "notes"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "wxds-sidebar",
+          "title": "微信读书",
+          "icon": "resources/weread-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "wxds-sidebar": [
+        {
+          "id": "wxds.shelfView",
+          "name": "我的书架"
+        },
+        {
+          "id": "wxds.notesView",
+          "name": "我的笔记与划线"
+        },
+        {
+          "id": "wxds.statsView",
+          "name": "阅读概况与统计"
+        },
+        {
+          "id": "wxds.discoverView",
+          "name": "发现与推荐"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "wxds.openReader",
+        "title": "打开内嵌阅读器",
+        "category": "微信读书",
+        "icon": "$(book)"
+      },
+      {
+        "command": "wxds.toggleReader",
+        "title": "切换显示/隐藏阅读器（老板键）",
+        "category": "微信读书",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "wxds.openExternalReader",
+        "title": "在浏览器中打开阅读",
+        "category": "微信读书",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "wxds.setApiKey",
+        "title": "配置 API Key",
+        "category": "微信读书",
+        "icon": "$(key)"
+      },
+      {
+        "command": "wxds.clearApiKey",
+        "title": "清除已保存的 API Key",
+        "category": "微信读书"
+      },
+      {
+        "command": "wxds.refreshAll",
+        "title": "刷新全部数据",
+        "category": "微信读书",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "wxds.refreshShelf",
+        "title": "刷新书架",
+        "category": "微信读书",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "wxds.refreshNotes",
+        "title": "刷新笔记本",
+        "category": "微信读书",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "wxds.refreshStats",
+        "title": "刷新阅读统计",
+        "category": "微信读书",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "wxds.refreshDiscover",
+        "title": "刷新推荐好书",
+        "category": "微信读书",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "wxds.openStatsDashboard",
+        "title": "打开阅读统计与偏好看板",
+        "category": "微信读书",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "wxds.openBookDetail",
+        "title": "查看书籍详情、目录与书评",
+        "category": "微信读书",
+        "icon": "$(info)"
+      },
+      {
+        "command": "wxds.searchStore",
+        "title": "书城多维搜索",
+        "category": "微信读书",
+        "icon": "$(search)"
+      },
+      {
+        "command": "wxds.findSimilarBooks",
+        "title": "查看相似好书推荐",
+        "category": "微信读书",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "wxds.exportBookNotes",
+        "title": "导出该书笔记划线为 Markdown",
+        "category": "微信读书",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "wxds.exportAllNotes",
+        "title": "一键导出全部笔记划线为 Markdown",
+        "category": "微信读书",
+        "icon": "$(export)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "wxds.toggleReader",
+        "key": "alt+shift+w",
+        "mac": "alt+shift+w"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "wxds.openReader",
+          "when": "view == wxds.shelfView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "wxds.searchStore",
+          "when": "view == wxds.shelfView || view == wxds.discoverView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "wxds.refreshShelf",
+          "when": "view == wxds.shelfView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "wxds.setApiKey",
+          "when": "view == wxds.shelfView",
+          "group": "navigation@4"
+        },
+        {
+          "command": "wxds.exportAllNotes",
+          "when": "view == wxds.notesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "wxds.refreshNotes",
+          "when": "view == wxds.notesView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "wxds.openStatsDashboard",
+          "when": "view == wxds.statsView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "wxds.refreshStats",
+          "when": "view == wxds.statsView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "wxds.refreshDiscover",
+          "when": "view == wxds.discoverView",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "wxds.openReader",
+          "when": "viewItem == wxdsBook || viewItem == wxdsRecommendBook",
+          "group": "inline@1"
+        },
+        {
+          "command": "wxds.openBookDetail",
+          "when": "viewItem == wxdsBook || viewItem == wxdsNotebook || viewItem == wxdsRecommendBook",
+          "group": "inline@2"
+        },
+        {
+          "command": "wxds.exportBookNotes",
+          "when": "viewItem == wxdsBook || viewItem == wxdsNotebook",
+          "group": "inline@3"
+        },
+        {
+          "command": "wxds.openExternalReader",
+          "when": "viewItem == wxdsBook || viewItem == wxdsRecommendBook",
+          "group": "1_read@1"
+        },
+        {
+          "command": "wxds.findSimilarBooks",
+          "when": "viewItem == wxdsBook || viewItem == wxdsNotebook || viewItem == wxdsRecommendBook",
+          "group": "2_discover@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "微信读书助手 (wxds)",
+      "properties": {
+        "wxds.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "在底部状态栏显示微信读书快捷入口"
+        },
+        "wxds.readerTabTitle": {
+          "type": "string",
+          "default": "微信读书",
+          "description": "内嵌阅读器标签页标题（可自定义为代码文件名等实现隐蔽阅读）"
+        },
+        "wxds.showTabLogo": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否在内嵌阅读器标签页上显示微信读书图标"
+        },
+        "wxds.readerOpacity": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.15,
+          "maximum": 1,
+          "description": "内嵌阅读器页面不透明度（0.15 - 1.0）"
+        },
+        "wxds.hideScrollbar": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否隐藏内嵌阅读器右侧滚动条"
+        },
+        "wxds.proxyPort": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "description": "内嵌阅读器本地反向代理端口（0 表示自动分配空闲端口）"
+        },
+        "wxds.exportDir": {
+          "type": "string",
+          "default": "weread-notes",
+          "description": "导出 Markdown 笔记的默认子目录（相对于当前工作区根目录）"
+        },
+        "wxds.apiGateway": {
+          "type": "string",
+          "default": "https://i.weread.qq.com/api/agent/gateway",
+          "description": "微信读书官方 Agent API Gateway 地址"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node esbuild.js --test && node --test dist-test/core.test.cjs",
+    "package": "npm run typecheck && npm run build && npx vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  }
+}
